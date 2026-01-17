@@ -65,50 +65,60 @@ export default function RecruitmentForm() {
   const [errorMessage, setErrorMessage] = useState('');
 
   // Backend API URL - Update this with your actual backend URL
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://underclad-athematic-nguyet.ngrok-free.dev/api/applications/submit';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://designandbuildhqrecruitformbackend.onrender.com/api/applications/submit';
+
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load form data from localStorage on component mount
-  useEffect(() => {
-    const savedFormData = localStorage.getItem('recruitmentFormData');
-    const savedSkills = localStorage.getItem('selectedSkills');
-    const savedPortfolioLinks = localStorage.getItem('portfolioLinks');
-    
-    if (savedFormData) {
-      try {
+useEffect(() => {
+  const loadSavedData = () => {
+    try {
+      const savedFormData = localStorage.getItem('recruitmentFormData');
+      const savedSkills = localStorage.getItem('selectedSkills');
+      const savedPortfolioLinks = localStorage.getItem('portfolioLinks');
+      
+      if (savedFormData) {
         const parsedData = JSON.parse(savedFormData);
         setFormData(parsedData);
         if (parsedData.ukClients) {
           setWorkedWithUK(parsedData.ukClients);
         }
-      } catch (error) {
-        console.error('Error parsing saved form data:', error);
       }
-    }
     
-    if (savedSkills) {
-      try {
+     if (savedSkills) {
         setSelectedSkills(JSON.parse(savedSkills));
-      } catch (error) {
-        console.error('Error parsing saved skills:', error);
       }
-    }
 
-    if (savedPortfolioLinks) {
-      try {
+      if (savedPortfolioLinks) {
         const parsedLinks = JSON.parse(savedPortfolioLinks);
         setPortfolioLinks(parsedLinks);
-      } catch (error) {
-        console.error('Error parsing saved portfolio links:', error);
       }
+    } catch (error) {
+      console.error('Error loading saved data:', error);
+      // Clear corrupted data
+      localStorage.removeItem('recruitmentFormData');
+      localStorage.removeItem('selectedSkills');
+      localStorage.removeItem('portfolioLinks');
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  };
 
-  // Save form data to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('recruitmentFormData', JSON.stringify(formData));
-    localStorage.setItem('selectedSkills', JSON.stringify(selectedSkills));
-    localStorage.setItem('portfolioLinks', JSON.stringify(portfolioLinks));
-  }, [formData, selectedSkills, portfolioLinks]);
+  loadSavedData();
+}, []);
+
+ // Save form data to localStorage whenever it changes - but only when not loading
+useEffect(() => {
+  if (!isLoading) {
+    try {
+      localStorage.setItem('recruitmentFormData', JSON.stringify(formData));
+      localStorage.setItem('selectedSkills', JSON.stringify(selectedSkills));
+      localStorage.setItem('portfolioLinks', JSON.stringify(portfolioLinks));
+    } catch (error) {
+      console.error('Error saving to localStorage:', error);
+    }
+  }
+}, [formData, selectedSkills, portfolioLinks, isLoading]);
 
   const skills = [
     'JavaScript', 'React', 'Figma', 'WordPress', 'Node.js', 'Flutter', 'Kotlin', 'Webflow', 
@@ -324,6 +334,10 @@ export default function RecruitmentForm() {
     setErrorMessage('');
     setSubmitSuccess(false);
 
+  if (isLoading) {
+    return;
+  }
+
     if (!validateForm()) {
       return;
     }
@@ -427,14 +441,39 @@ export default function RecruitmentForm() {
   };
 
   // Clear all localStorage data
-  const handleClearStorage = () => {
-    if (window.confirm('Clear all saved form data?')) {
-      localStorage.removeItem('recruitmentFormData');
-      localStorage.removeItem('selectedSkills');
-      localStorage.removeItem('portfolioLinks');
-      window.location.reload();
-    }
-  };
+ const handleClearStorage = () => {
+  if (window.confirm('Clear all saved form data?')) {
+    localStorage.removeItem('recruitmentFormData');
+    localStorage.removeItem('selectedSkills');
+    localStorage.removeItem('portfolioLinks');
+    
+    // Reset all state
+    setFormData({
+      fullName: '',
+      email: '',
+      phone: '',
+      location: '',
+      primaryRole: '',
+      customRole: '',
+      experience: '',
+      portfolio: [''],
+      availability: '',
+      ukHours: '',
+      officeWork: '',
+      salaryRange: '',
+      summary: '',
+      ukClients: '',
+      ukClientsDetails: '',
+      interest: '',
+      accuracyConsent: false,
+      dataConsent: false,
+    });
+    setSelectedSkills([]);
+    setPortfolioLinks(['']);
+    setWorkedWithUK('');
+    setCvFile(null);
+  }
+};
 
   // Helper function to check if a field has error
   const hasError = (fieldName: string): boolean => {
@@ -494,15 +533,6 @@ export default function RecruitmentForm() {
           </div>
         </header>
 
-        {/* Success Message */}
-    
-
-        {/* Error Message */}
-        {errorMessage && (
-          <div style={styles.errorMessage}>
-            ❌ {errorMessage}
-          </div>
-        )}
 
         {/* Form Content */}
         <div style={styles.form}>
@@ -1048,9 +1078,7 @@ export default function RecruitmentForm() {
               />
               <span style={styles.checkboxText}>I consent to my data being stored and used for recruitment purposes</span>
             </label>
-            {hasError('dataConsent') && (
-              <div style={styles.errorText}>{getErrorMessage('dataConsent')}</div>
-            )}
+           
           </section>
 
           {/* Submit Button */}
@@ -1066,7 +1094,17 @@ export default function RecruitmentForm() {
           <div style={styles.successMessage}>
             ✅ Application submitted successfully! You will receive a confirmation email shortly.
           </div>
+          
+            )}  
+               {/* Error Message */}
+        {errorMessage && (
+          <div style={styles.errorMessage}>
+            ❌ {errorMessage}
+          </div>
         )}
+             {hasError('dataConsent') && (
+              <div style={styles.errorText}>{getErrorMessage('dataConsent')}</div>
+            )}
             <p style={styles.reassurance}>
               Only shortlisted candidates will be contacted. You will receive a confirmation email upon successful submission.
             </p>
@@ -1183,6 +1221,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: '500',
     fontSize: '0.95rem',
     borderBottom: '1px solid #fecaca',
+    margin: '22px 0px',
   },
   form: {
     padding: '48px 22px',
