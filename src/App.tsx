@@ -277,13 +277,14 @@ useEffect(() => {
       errors.push({ field: 'salaryRange', message: 'Salary range is required' });
     }
 
-    if (!formData.summary.trim()) {
-      errors.push({ field: 'summary', message: 'Professional summary is required' });
-    } else if (formData.summary.length < 50) {
-      errors.push({ field: 'summary', message: 'Summary must be at least 50 characters' });
-    } else if (formData.summary.length > 2000) {
-      errors.push({ field: 'summary', message: 'Summary cannot exceed 2000 characters' });
-    }
+   // Only validate if the user has actually typed something
+if (formData.summary.trim().length > 0) {
+  if (formData.summary.length < 50) {
+    errors.push({ field: 'summary', message: 'Summary must be at least 50 characters' });
+  } else if (formData.summary.length > 2000) {
+    errors.push({ field: 'summary', message: 'Summary cannot exceed 2000 characters' });
+  }
+}
 
     if (!formData.ukClients) {
       errors.push({ field: 'ukClients', message: 'UK clients experience is required' });
@@ -943,30 +944,32 @@ useEffect(() => {
           <section style={styles.section}>
             <h3 style={styles.sectionTitle}>Additional Information</h3>
             
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Short Professional Summary or Project You're Proud Of *</label>
-              <textarea 
-                name="summary"
-                value={formData.summary}
-                onChange={handleInputChange}
-                required 
-                rows={4}
-                style={{
-                  ...styles.textarea,
-                  ...(hasError('summary') ? styles.inputError : {})
-                }}
-                placeholder="Tell us briefly about your experience or a project you're particularly proud of..."
-              />
-              {hasError('summary') && (
-                <div style={styles.errorText}>{getErrorMessage('summary')}</div>
-              )}
-              <div style={styles.charCounter}>
-                {formData.summary.length}/2000 characters
-                {formData.summary.length < 50 && (
-                  <span style={styles.charWarning}> (minimum 50 required)</span>
-                )}
-              </div>
-            </div>
+          <div style={styles.inputGroup}>
+  {/* 1. Removed the asterisk (*) from the label */}
+  <label style={styles.label}>Short Professional Summary or Project You're Proud Of (Optional)</label>
+  <textarea 
+    name="summary"
+    value={formData.summary}
+    onChange={handleInputChange}
+    // 2. Removed the 'required' attribute
+    rows={4}
+    style={{
+      ...styles.textarea,
+      ...(hasError('summary') ? styles.inputError : {})
+    }}
+    placeholder="Tell us briefly about your experience or a project you're particularly proud of..."
+  />
+  {hasError('summary') && (
+    <div style={styles.errorText}>{getErrorMessage('summary')}</div>
+  )}
+  <div style={styles.charCounter}>
+    {formData.summary.length}/2000 characters
+    {/* 3. Updated logic: Only show warning if they have started typing (length > 0) but haven't reached 50 */}
+    {formData.summary.length > 0 && formData.summary.length < 50 && (
+      <span style={styles.charWarning}> (minimum of 50 if provided)</span>
+    )}
+  </div>
+</div>
 
             <div style={styles.inputGroup}>
               <label style={styles.label}>Have You Worked With International or UK-Based Clients Before? *</label>
