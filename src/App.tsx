@@ -252,14 +252,16 @@ useEffect(() => {
     }
 
     // Portfolio links validation
-    const validLinks = portfolioLinks.filter(link => link.trim() !== '');
-    validLinks.forEach(link => {
-      try {
-        new URL(link);
-      } catch {
-        errors.push({ field: 'portfolio', message: 'All portfolio links must be valid URLs' });
-      }
-    });
+  // --- FIND THIS SECTION IN YOUR validateForm FUNCTION ---
+const validLinks = portfolioLinks.filter(link => link.trim() !== '');
+const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,256})([/\w .-]*)*\/?$/; // Same as backend
+
+validLinks.forEach(link => {
+  // Replace the try/catch (new URL) block with this:
+  if (!urlRegex.test(link)) {
+    errors.push({ field: 'portfolio', message: 'All portfolio links must be valid URLs' });
+  }
+});
 
     if (!formData.availability) {
       errors.push({ field: 'availability', message: 'Availability is required' });
@@ -312,22 +314,40 @@ if (formData.summary.trim().length > 0) {
     return errors.length === 0;
   };
 
-  const scrollToError = () => {
-    if (validationErrors.length > 0) {
-      const firstError = validationErrors[0];
-      const errorElement = document.querySelector(`[name="${firstError.field}"]`);
-      if (errorElement) {
-        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        (errorElement as HTMLElement).focus();
-      }
-    }
-  };
+ const scrollToError = React.useCallback(() => {
+  if (validationErrors.length > 0) {
+    const firstError = validationErrors[0];
+    
+    // 1. Try to find the wrapper div (id) first, then fallback to name
+    const errorElement = 
+      document.getElementById(firstError.field) || 
+      document.querySelector(`[name="${firstError.field}"]`);
+    
+    if (errorElement) {
+      // Use scrollIntoView - it handles parent containers much better
+      errorElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' // 'center' ensures it's not hidden under a fixed header
+      });
 
-  useEffect(() => {
-    if (validationErrors.length > 0) {
-      scrollToError();
+      // 2. Focus the actual input inside that element if possible
+      setTimeout(() => {
+        const focusable = errorElement.tagName === 'INPUT' || errorElement.tagName === 'TEXTAREA' || errorElement.tagName === 'SELECT'
+          ? errorElement
+          : errorElement.querySelector('input, textarea, select');
+          
+        if (focusable) (focusable as HTMLElement).focus();
+      }, 500); // Wait for the smooth scroll to finish
     }
-  }, [validationErrors]);
+  }
+}, [validationErrors]);
+
+// 2. The effect now safely includes scrollToError
+useEffect(() => {
+  if (validationErrors.length > 0) {
+    scrollToError();
+  }
+}, [validationErrors, scrollToError]);
 
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -561,7 +581,7 @@ if (formData.summary.trim().length > 0) {
               )}
             </div>
 
-            <div style={styles.inputGroup}>
+            <div style={styles.inputGroup} id='email'>
               <label style={styles.label}>Email Address *</label>
               <input 
                 type="email" 
@@ -707,7 +727,7 @@ if (formData.summary.trim().length > 0) {
               )}
             </div>
 
-            <div style={styles.inputGroup}>
+            <div style={styles.inputGroup} id="skills">
               <label style={styles.label}>Core Skills / Tech Stack *</label>
               <p style={styles.helperText}>Select from options or add your own</p>
               <div style={styles.chipContainer}>
@@ -798,13 +818,13 @@ if (formData.summary.trim().length > 0) {
               )}
             </div>
 
-            <div style={styles.inputGroup}>
+            <div style={styles.inputGroup} id="portfolio">
               <label style={styles.label}>Portfolio / Website / GitHub / Behance Links</label>
               <p style={styles.helperText}>Add multiple links (one per field)</p>
               {portfolioLinks.map((link, index) => (
                 <div key={index} style={styles.portfolioLinkContainer}>
                   <input 
-                    type="url" 
+                    type="text" 
                     value={link}
                     onChange={(e) => handlePortfolioLinkChange(index, e.target.value)}
                     style={{
