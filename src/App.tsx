@@ -531,7 +531,7 @@ useEffect(() => {
         <header style={styles.header}>
           <img
             src="/design.png"
-            alt="Design & Build logo"
+            alt="DesignandBuildHQ logo"
             style={styles.companyName}
           />
 
@@ -1038,7 +1038,7 @@ useEffect(() => {
             )}
 
             <div style={styles.inputGroup}>
-              <label style={styles.label}>Why Are You Interested in Working With Design & Build? *</label>
+              <label style={styles.label}>Why Are You Interested in Working With DesignandBuildHQ? *</label>
               <textarea 
                 name="interest"
                 value={formData.interest}
@@ -1136,7 +1136,7 @@ useEffect(() => {
 
         {/* Footer */}
         <footer style={styles.footer}>
-          <p style={styles.footerText}>© Design & Build</p>
+          <p style={styles.footerText}>© DesignandBuildHQ</p>
         </footer>
       </div>
     </div>
